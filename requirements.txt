@@ -1,0 +1,16 @@
+ipdb
+tqdm
+xlrd
+pandas
+xlutils
+tabulate
+xlwt
+torch
+tensorboard
+matplotlib
+numpy
+scikit_learn
+POT
+gurobipy
+fastdtw
+POT
