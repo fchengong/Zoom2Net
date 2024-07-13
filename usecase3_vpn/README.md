@@ -1,4 +1,4 @@
-# Usecase 1: ToR burstiness in a Cloud using synthetic dataset
+# Usecase 3: Encrypted VPN traffic classification
 
 This code has been tested with `Python 3.8` and `Pytorch 2.0`.
 
