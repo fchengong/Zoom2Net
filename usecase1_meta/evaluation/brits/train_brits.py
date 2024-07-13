@@ -299,6 +299,6 @@ def convert_brits(data, WINDOW_SIZE, COARSE):
     evals[:,0] = data[1]
     eval_masks = np.zeros(evals.shape)
     eval_masks[:,0] = 1
-    rec['forward'] = parse_rec(value, masks, evals, eval_masks, dir_='forward', WINDOW_SIZE=1000)
-    rec['backward'] = parse_rec(value[::-1], masks[::-1], evals[::-1], eval_masks[::-1], dir_='backward', WINDOW_SIZE=1000)
+    rec['forward'] = parse_rec(value, masks, evals, eval_masks, dir_='forward', WINDOW_SIZE=WINDOW_SIZE)
+    rec['backward'] = parse_rec(value[::-1], masks[::-1], evals[::-1], eval_masks[::-1], dir_='backward', WINDOW_SIZE=WINDOW_SIZE)
     return [rec]

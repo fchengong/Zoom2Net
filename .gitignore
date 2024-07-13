@@ -9,6 +9,8 @@ my_proj/
 # Dataset
 *.npz
 *.gz
+*.zip
+pickles_artifact/
 
 # Models
 *.pth

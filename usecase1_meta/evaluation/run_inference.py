@@ -91,9 +91,7 @@ def impute_data(config, model, test_dataset, rackdata_len, ingressBytes_max, tim
     return res_pred, res_true, time_spend
 
 # Use ILP in parallel
-def parallel(i, summation, output, congestion):
-    COARSE = 50
-    ingressBytes_max = 2891883.0
+def parallel(i, summation, output, congestion, ingressBytes_max, COARSE):
     ml_output = output[i*COARSE:(i+1)*COARSE]
     incongestion = congestion[i]
     sum_interval = round(summation[i])
@@ -115,7 +113,8 @@ def test_ml_prediction_parallel(summation, output, congestion, config, ingressBy
     result = np.zeros(WINDOW_SIZE)
     pool = Pool(WINDOW_SIZE//COARSE)
     
-    for return_val in pool.map(partial(parallel, summation=(summation), output=output, congestion=congestion), np.arange(WINDOW_SIZE//COARSE)):
+    for return_val in pool.map(partial(parallel, summation=(summation), output=output, congestion=congestion), \
+                                ingressBytes_max=ingressBytes_max, COARSE=COARSE, np.arange(WINDOW_SIZE//COARSE)):
         if return_val != None:
             result[return_val[0]*COARSE:(return_val[0]+1)*COARSE] = return_val[1]
     

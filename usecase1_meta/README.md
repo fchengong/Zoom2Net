@@ -28,7 +28,7 @@ We train the model on an Nvidia Tesla T4-16GB GPU. It take about 20min to finish
 python main.py --z2n_model_dir ./checkpoints/z2n_model.torch --task eval_downstream_task --compute_baselines False
 ```
 
-In the above command, `z2n_model_dir` is the path to the trained Zoom2Net model; `task` is to denote evaluating downstream tasks (i.e. bursts analysis); getting results from baselines mentioned in the paper (i.e. KNN, training Brits from scratch) can take up to an hour, so we preload the evaluation data using False `compute_baselines`. 
+In the above command, `z2n_model_dir` is the path to the trained Zoom2Net model; `task` is to denote evaluating downstream tasks (i.e. bursts analysis); getting results from baselines mentioned in the paper (i.e. KNN, training Brits from scratch) can take up to an hour, so we preload the evaluation data using `--compute_baselines False`. If you want to train the baselines from scratch, use `--compute_baselines True`. 
 
 The command will produce results shown in Figure 8 and Figure 9 in the paper. 
 
@@ -37,7 +37,7 @@ The command will produce results shown in Figure 8 and Figure 9 in the paper.
 python main.py --z2n_model_dir ./checkpoints/z2n_model.torch --task eval_timing
 ```
 
-This command will output the average inference time. This will produce results in Table 1 in the paper.
+This command will load the pretrained model with window_size of 1000, zoom-in factor of 50 and output the average inference time. This will produce results in Table 1 in the paper.
 
 ## Perform zoom-in factor analysis
 

@@ -15,6 +15,9 @@ def neighbors(test_index, server, k, train_dataset_knn, test_dataset, indexes):
     # test_index: index into test_dataset
     # server: index into server
     # k: consider first k closest neighbors 
+    # train_dataset_knn: training data
+    # test_dataset: testing data to impute
+    # indexes: aggregate indexes
     dist = []
     def myFunc(e):
       return e['dist']
@@ -95,7 +98,7 @@ def knn(config, test_dataset, train_dataset, rackdata_len, ingressBytes_max):
         res_true_knn = np.reshape(res_true_knn, (rackdata_len*92,num_WINDOW*WINDOW_SIZE))
         res_pred_knn = np.reshape(res_pred_knn, (rackdata_len*92,num_WINDOW*WINDOW_SIZE))
 
-    res_knn = downstream_task(res_true_knn, res_pred_knn, rackdata_len, ingressBytes_max)
+    res_knn = downstream_task(res_pred_knn, res_true_knn, rackdata_len, ingressBytes_max)
 
     return res_knn
 
@@ -103,7 +106,7 @@ def plain_transformer(config, test_dataset, rackdata_len, ingressBytes_max):
     WINDOW_SKIP = config.window_skip
     WINDOW_SIZE = config.window_size
     COARSE = config.zoom_in_factor
-    model_plain = load_model(config, config.z2n_model_dir, d_model=config.d_model, n_heads=config.n_heads, dim_feedforward=config.dim_feedforward, 
+    model_plain = load_model(config, config.plain_model_dir, d_model=config.d_model, n_heads=config.n_heads, dim_feedforward=config.dim_feedforward, 
                                 zoom_in_factor=config.zoom_in_factor, window_size=config.window_size)
     model_plain.eval()
     indexes = []
@@ -139,7 +142,7 @@ def plain_transformer(config, test_dataset, rackdata_len, ingressBytes_max):
     res_true_plain = np.reshape(res_true_plain, (rackdata_len*92,num_WINDOW*WINDOW_SIZE))
     res_pred_plain = np.reshape(res_pred_plain, (rackdata_len*92,num_WINDOW*WINDOW_SIZE))
 
-    res_plain = downstream_task(res_true_plain, res_pred_plain, rackdata_len, ingressBytes_max)
+    res_plain = downstream_task(res_pred_plain, res_true_plain, rackdata_len, ingressBytes_max)
 
     return res_plain
 
@@ -212,7 +215,7 @@ def iter_imputer(config, test_dataset, rackdata_len, ingressBytes_max):
         res_true_iter = np.reshape(res_true_iter, (rackdata_len*92,num_WINDOW*WINDOW_SIZE))
         res_pred_iter = np.reshape(res_pred_iter, (rackdata_len*92,num_WINDOW*WINDOW_SIZE))
 
-    res_iter = downstream_task(res_true_iter, res_pred_iter, rackdata_len, ingressBytes_max)
+    res_iter = downstream_task(res_pred_iter, res_true_iter, rackdata_len, ingressBytes_max)
 
     return res_iter
 
@@ -232,6 +235,6 @@ def brits(config, test_dataset, train_dataset, rackdata_len, ingressBytes_max):
         model = train_brits.train_brits(data_iter_train, data_iter_test, config.window_size)
         res_true_brits, res_pred_brits = train_brits.run_inference(config, test_dataset, model, rackdata_len)
     
-    res_brits = downstream_task(res_true_brits, res_pred_brits, rackdata_len, ingressBytes_max)
+    res_brits = downstream_task(res_pred_brits, res_true_brits, rackdata_len, ingressBytes_max)
 
     return res_brits

@@ -70,7 +70,6 @@ def plot(res_z2n, res_knn, res_iter, res_plain, res_brits):
     methods = ['Zoom2Net', 'KNN', 'CoarseGrained', 'PlainTransformer', 'Brits']
     fig, ax = plt.subplots(1, 1, figsize=(6,3))
     cmap = plt.colormaps.get_cmap('Blues')
-    a = [0.16125914,0.0076367,0.00173403]
     diff = 0
     for i in range(5):
         r = all_methods[i].copy()
