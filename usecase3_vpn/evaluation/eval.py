@@ -34,16 +34,20 @@ def run_new_features(config, input, output, y1_min, y1_max, y2_min, y2_max, maxi
     with open("./datasets/vpn_data/len40_feat17.pickle", "rb") as fin:
         flat_res= pickle.load(fin)
         fin.close()
-    fiat_total_knn, biat_total_knn, fiat_mean_knn, biat_mean_knn, duration_knn, fb_psec_knn=\
-        knn_new_features(input, output, y1_min, y1_max, y2_min, y2_max, flat_res)
-    train_classifier(fiat_total_knn, biat_total_knn, fiat_mean_knn, biat_mean_knn, duration_knn, fb_psec_knn)
+    # KNN
+    # fiat_total_knn, biat_total_knn, fiat_mean_knn, biat_mean_knn, duration_knn, fb_psec_knn=\
+    #     knn_new_features(input, output, y1_min, y1_max, y2_min, y2_max, flat_res)
+    # train_classifier(fiat_total_knn, biat_total_knn, fiat_mean_knn, biat_mean_knn, duration_knn, fb_psec_knn)
+
+    # Z2N
     model = load_model(config, config.z2n_model_dir)
     model.eval()
     fiat_total_z2n, biat_total_z2n, fiat_mean_z2n, biat_mean_z2n, duration_z2n, fb_psec_z2n=\
-        z2n_new_features(model, input, output, y1_min, y1_max, y2_min, y2_max, maximum_deleted, minimum_deleted)
+        z2n_new_features(model, input, output, y1_min, y1_max, y2_min, y2_max, maximum_deleted, minimum_deleted, flat_res)
     train_classifier(fiat_total_z2n, biat_total_z2n, fiat_mean_z2n, biat_mean_z2n, duration_z2n, fb_psec_z2n)
+
     fiat_total_plain, biat_total_plain, fiat_mean_plain, biat_mean_plain, duration_plain, fb_psec_plain=\
-                                plain_new_features(model, input, output, y1_min, y1_max, y2_min, y2_max)
+                                plain_new_features(model, input, output, y1_min, y1_max, y2_min, y2_max, flat_res)
     train_classifier(fiat_total_plain, biat_total_plain, fiat_mean_plain, biat_mean_plain, duration_plain, fb_psec_plain)
 
 def plot(res_z2n, res_knn, res_plain):

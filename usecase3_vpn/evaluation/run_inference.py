@@ -135,7 +135,7 @@ def linear_programming(fiat_max, biat_max, fwd_bytes_max, bwd_bytes_max, num_pkt
                 r.append(v.X)
         return r
 
-def z2n_new_features(model, input, output, y1_min, y1_max, y2_min, y2_max, maximum_deleted, minimum_deleted):
+def z2n_new_features(model, input, output, y1_min, y1_max, y2_min, y2_max, maximum_deleted, minimum_deleted, flat_res):
     fiat_total_z2n = []
     biat_total_z2n = []
     fiat_max_index = -8

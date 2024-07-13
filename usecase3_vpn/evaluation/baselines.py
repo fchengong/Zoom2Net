@@ -154,7 +154,7 @@ def knn_new_features(input, output, y1_min, y1_max, y2_min, y2_max, flat_res):
         fb_psec_knn.append(total / (duration / (10**6)))
     return fiat_total_knn, biat_total_knn, fiat_mean_knn, biat_mean_knn, duration_knn, fb_psec_knn
 
-def plain_new_features(model, input, output, y1_min, y1_max, y2_min, y2_max):
+def plain_new_features(model, input, output, y1_min, y1_max, y2_min, y2_max, flat_res):
     fiat_total_plain = []
     biat_total_plain = []
     for i in range(len(input)):
