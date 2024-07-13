@@ -36,7 +36,7 @@ def train_z2n(config, train_dataset_processed, test_dataset_processed, train_dat
     d_model = config.d_model
     n_heads = config.n_heads
     num_layers = config.num_layers
-    max_len = 7*int(WINDOW_SIZE / COARSE)
+    max_len = WINDOW_SIZE
     dim_feedforward = config.dim_feedforward
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -93,10 +93,9 @@ def train_z2n(config, train_dataset_processed, test_dataset_processed, train_dat
                 break
             epoch += 1
         train_loader = DataLoader(update_train_dataset, batch_size=batch_size, num_workers=4, shuffle=True)
-        check_constr, max_constr, \
+        check_constr, \
                 update_train_dataset = utils.check_constraints(model, train_loader, mu=mu, \
                 batch_size=batch_size, WINDOW_SIZE=WINDOW_SIZE, COARSE=COARSE)
-        check_constr = check_constr.detach().cpu()
         print(f"Epoch {epoch} finish, training data constraint loss {check_constr}")
         total_constr_error.append(check_constr)
         test_constr_violation = utils.test_constraint(model, test_dataset_processed, \

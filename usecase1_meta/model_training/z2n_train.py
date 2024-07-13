@@ -108,6 +108,5 @@ def train_z2n(config, train_dataset_processed, test_dataset_processed, seed):
                                 batch_size=batch_size, num_workers=4, shuffle=True)
         mu = mu * 1.5
         iteration += 1
-        break       #####TODO Remove!!
 
     torch.save(model.state_dict(), config.save_model_dir)

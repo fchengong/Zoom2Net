@@ -1,28 +1,16 @@
 # Zoom2Net: Constrained Network Telemetry Imputation
 This code corresponds to the paper: **Zoom2Net: Constrained Network Telemetry Imputation**.
+This code has been tested with `Python 3.7` and `Pytorch 2.0`.
 
 ## Setup
 `cd zoom2net/`
 
-Inside an already *existing* root directory, each experiment will create a time-stamped output directory, which contains
-model checkpoints.
-The following commands assume that you have created a new root directory inside the project directory like this: 
-`mkdir experiments`.
-
-This code has been tested with `Python 3.7` and `3.8`.
-
 `pip install -r requirements.txt`
 
-## Run Zoom2Net
+## Run Zoom2Net for different usecases
 
-To see all command options with explanations, run: `python src/main.py --help`
-
-## Train models from scratch
-
-```bash
-python src/main.py --output_dir path/to/experiments --window_size 1000 --window_skip 100 --zoom_in_factor 50
-```
+There are 3 usecases with 4 different datasets in separate directories. Move to each directory to see detailed running instruction.
 
 ## Gurobi license
 
-Get lisence from Gurobi User Portal https://portal.gurobi.com/iam/licenses/list.
+Running Gurobi ILP requires a license. Get license from Gurobi User Portal https://portal.gurobi.com/iam/licenses/list. And place the file `gurobi.lic` to `/opt/gurobi and your home directory (/home/yourusername)` for Linux system. 

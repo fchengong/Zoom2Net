@@ -8,14 +8,14 @@ import itertools
 
 from evaluation.brits.model import BritsModel
 import evaluation.brits.utils as utils
-from preprocessing.preprocessor3 import convert
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-FEATURE_NUM = 12
+FEATURE_NUM = 8
 def parse_delta(masks, dir_, WINDOW_SIZE):
     deltas = []
-
+    # if masks.shape[0] != 8:
+    #     print('not')
     for h in range(WINDOW_SIZE):
         if h == 0:
             deltas.append(np.ones(FEATURE_NUM))
@@ -53,60 +53,44 @@ def prepare_brits_data(config,train_dataset, test_dataset):
     WINDOW_SKIP = config.window_skip
     WINDOW_SIZE = config.window_size
     COARSE = config.zoom_in_factor
-    num_window = int(WINDOW_SIZE / COARSE)   # 6
-    num_queue = 1
-    train_dataset_2 = []
-    test_dataset_2 = []
-    indexes = []
-    for i in range(8):
-        a = list(range(i))
-        b = list(range(i+1,8))
-        indexes.append((a+b))
-    for i in range(len(train_dataset)):
-        converted = convert_odd(train_dataset[i][0])
-        for j in range(8):
-            b = (np.sum(converted[indexes[j]], axis=0))/7
-            a = converted[j]
-            d = np.concatenate((a,b))
-            train_dataset_2.append((d, train_dataset[i][1][2*j+1]))
-    for i in range(len(test_dataset)):
-        converted = convert_odd(test_dataset[i][0])
-        for j in range(8):
-            b = (np.sum(converted[indexes[j]], axis=0))/7
-            a = converted[j]
-            d = np.concatenate((a,b))
-            test_dataset_2.append((d, test_dataset[i][1][2*j+1]))
-            
     all_rec_train = []
     for i in range(len(train_dataset)):
-        rec = {}
-        value = np.transpose(train_dataset_2[i][0])
-        masks = np.ones(value.shape) # 300, 12
-        for k in range(6):
-            masks[k*COARSE+1:(k+1)*COARSE, 0] = 0
+        periodic = np.zeros((1,WINDOW_SIZE))
+        time = [int(a) for a in train_dataset[i][2]] #int(train_dataset[i][2])
+        periodic[0,time] = train_dataset[i][1][time]
+        value = np.transpose(np.concatenate((periodic, train_dataset[i][0])))
+        masks = np.ones(value.shape) # 300, 8
+        for k in range(WINDOW_SIZE):
+            if k not in time:
+                masks[k, 0] = 0
         evals = value.copy()
-        evals[:,0] = train_dataset_2[i][1]
+        evals[:,0] = train_dataset[i][1]
         eval_masks = np.zeros(evals.shape)
         eval_masks[:,0] = 1
+        rec = {}
         rec['forward'] = parse_rec(value, masks, evals, eval_masks, dir_='forward', WINDOW_SIZE=WINDOW_SIZE)
-        rec['backward'] = parse_rec(value[::-1], masks[::-1], evals[::-1], eval_masks[::-1], \
-                                    dir_='backward', WINDOW_SIZE=WINDOW_SIZE)
+        rec['backward'] = parse_rec(value[::-1], masks[::-1], evals[::-1], eval_masks[::-1], dir_='backward', WINDOW_SIZE=WINDOW_SIZE)
         all_rec_train.append(rec)
+        
     all_rec_test = []
-    for i in range(len(test_dataset_2)):
-        rec = {}
-        value = np.transpose(test_dataset_2[i][0])
-        masks = np.ones(value.shape) # 300, 12
-        for k in range(6):
-            masks[k*COARSE+1:(k+1)*COARSE, 0] = 0
+    for i in range(len(test_dataset)):
+        periodic = np.zeros((1,WINDOW_SIZE))
+        # time = int(test_dataset[i][2])
+        time = [int(a) for a in test_dataset[i][2]]
+        periodic[0,time] = test_dataset[i][1][time]
+        value = np.transpose(np.concatenate((periodic, test_dataset[i][0])))
+        masks = np.ones(value.shape) # 300, 8
+        for k in range(WINDOW_SIZE):
+            if k not in time:
+                masks[k, 0] = 0
         evals = value.copy()
-        evals[:,0] = test_dataset_2[i][1]
+        evals[:,0] = test_dataset[i][1]
         eval_masks = np.zeros(evals.shape)
         eval_masks[:,0] = 1
+        rec = {}
         rec['forward'] = parse_rec(value, masks, evals, eval_masks, dir_='forward', WINDOW_SIZE=WINDOW_SIZE)
-        rec['backward'] = parse_rec(value[::-1], masks[::-1], evals[::-1], eval_masks[::-1], \
-                                        dir_='backward', WINDOW_SIZE=WINDOW_SIZE)
-        all_rec_test.append(rec)   
+        rec['backward'] = parse_rec(value[::-1], masks[::-1], evals[::-1], eval_masks[::-1], dir_='backward', WINDOW_SIZE=WINDOW_SIZE)
+        all_rec_test.append(rec)  
     data_iter_train = get_loader(all_rec_train, batch_size=64)
     data_iter_test = get_loader(all_rec_test, batch_size=16)
     return data_iter_train, data_iter_test
@@ -233,60 +217,95 @@ def evaluate(model, val_iter):
     print('MRE: ', np.abs(evals - imputations).sum() / np.abs(evals).sum())
     return mae, mre
 
-def run_inference(config, test_dataset, model, rackdata_len):
+def run_inference(config, test_dataset, model, data_3s_train, \
+                data_3s_test, data_3to6s_train, data_3to6s_test, data_6to9s_train, data_6to9s_test, \
+                index_of_3s, index_of_3to6s, index_of_6to9s):
     WINDOW_SKIP = config.window_skip
     WINDOW_SIZE = config.window_size
     COARSE = config.zoom_in_factor
     model.eval()
-    even = np.arange(0,8)
-    indexes = []
-    for i in range(8):
-        a = list(range(i))
-        b = list(range(i+1,8))
-        indexes.append((a+b))
-    res_true_brits = np.zeros((rackdata_len, 8, 33, 300))
-    res_pred_brits = np.zeros((rackdata_len, 8, 33, 300))
-    num_intervals = 33
-    skipped = WINDOW_SIZE // WINDOW_SKIP
-    for q in even:
-        feature_ports = q
-        label_ports_odd = q*2+1
-        for i in range(rackdata_len):
-            cnt = 0
-            for j in range(i*num_intervals, (i+1)*num_intervals):
-                if (j < num_intervals and j % skipped == 0) or \
-                (j >= num_intervals * i and (j - num_intervals * i) % skipped == 0):
-                     # Odd queue
-                    converted = convert_odd(test_dataset[j][0])
-                    b = (np.sum(converted[indexes[feature_ports]], axis=0))
-                    a = (converted[feature_ports])
-                    b = (b)/7
-                    x = np.concatenate((a,b))
-                    rec = convert_brits([x, test_dataset[j][1][label_ports_odd]],WINDOW_SIZE, COARSE)
-                    iter_rec = get_loader(rec, batch_size=1, shuffle = False)
-                    d = next(iter(iter_rec))
-                    ret = model.run_on_batch(utils.to_var(d), optimizer=None)
-                    eval_masks = ret['eval_masks'].data.cpu().numpy()
-                    imputation = ret['imputations'].data.cpu().numpy()
-                    pred = imputation[np.where(eval_masks == 1)].tolist()
-                    res_true_brits[i,feature_ports,cnt,:] = test_dataset[j][1][label_ports_odd]
-                    res_pred_brits[i,feature_ports,cnt,:] = pred
-                    cnt += 1
-    res_true_brits = np.reshape(res_true_brits, (rackdata_len,8,9900))
-    res_pred_brits = np.reshape(res_pred_brits, (rackdata_len,8,9900))
 
-    return res_true_brits, res_pred_brits
+    pred9s_brits = []
+    true9s_brits = []
+    pred6s_brits = []
+    true6s_brits = []
+    pred3s_brits = []
+    true3s_brits = []
+    for i in range(data_3s_test):
+        rec = convert_brits(test_dataset[i], WINDOW_SIZE, COARSE)
+        iter_rec = get_loader(rec, batch_size=1, shuffle = False)
+        d = next(iter(iter_rec))
+        ret = model.run_on_batch(utils.to_var(d), optimizer=None)
+        eval_masks = ret['eval_masks'].data.cpu().numpy()
+        imputation = ret['imputations'].data.cpu().numpy()
+        pred = imputation[np.where(eval_masks == 1)].tolist()
+
+        s3 = pred
+        ground_thruth_3s = test_dataset[i][1]
+        a = index_of_3s[data_3s_train+i]
+        b = np.where(index_of_3to6s == a)[0]
+        c = np.where(index_of_6to9s == a)[0]
+        exist_3to6 = False
+        exist_6to9 = False
+        if len(b) != 0 and b[0] > data_3to6s_train:
+            exist_3to6 = True
+            test_index = b[0] - data_3to6s_train + data_3s_test
+
+            rec = convert_brits(test_dataset[test_index], WINDOW_SIZE, COARSE)
+            iter_rec = get_loader(rec, batch_size=1, shuffle = False)
+            d = next(iter(iter_rec))
+            ret = model.run_on_batch(utils.to_var(d), optimizer=None)
+            eval_masks = ret['eval_masks'].data.cpu().numpy()
+            imputation = ret['imputations'].data.cpu().numpy()
+            pred = imputation[np.where(eval_masks == 1)].tolist()
+
+            s3to6 = pred
+            ground_thruth_3to6s = test_dataset[test_index][1]
+        if exist_3to6 == True and len(c) != 0 and c[0] > data_6to9s_train:
+            exist_6to9 = True
+            test_index2 = c[0] - data_6to9s_train + data_3s_test + data_3to6s_test
+
+            rec = convert_brits(test_dataset[test_index2], WINDOW_SIZE, COARSE)
+            iter_rec = get_loader(rec, batch_size=1, shuffle = False)
+            d = next(iter(iter_rec))
+            ret = model.run_on_batch(utils.to_var(d), optimizer=None)
+            eval_masks = ret['eval_masks'].data.cpu().numpy()
+            imputation = ret['imputations'].data.cpu().numpy()
+            pred = imputation[np.where(eval_masks == 1)].tolist()
+            
+            s6to9 = pred
+            ground_thruth_6to9s = test_dataset[test_index2][1]
+        if exist_3to6 == True and exist_6to9 == True:
+            pred9s_brits.append(np.concatenate((s3, s3to6, s6to9)))
+            true9s_brits.append(np.concatenate((ground_thruth_3s, ground_thruth_3to6s, ground_thruth_6to9s)))
+        elif exist_3to6 == True and exist_6to9 == False:
+            pred6s_brits.append(np.concatenate((s3, s3to6)))
+            true6s_brits.append(np.concatenate((ground_thruth_3s, ground_thruth_3to6s)))
+        elif exist_3to6 == False and exist_6to9 == False:
+            pred3s_brits.append(s3)
+            true3s_brits.append(ground_thruth_3s)
+    pred9s_brits = np.array(pred9s_brits)
+    true9s_brits = np.array(true9s_brits)
+    pred6s_brits = np.array(pred6s_brits)
+    true6s_brits = np.array(true6s_brits)
+    pred3s_brits = np.array(pred3s_brits)
+    true3s_brits = np.array(true3s_brits)
+    return [true9s_brits, true6s_brits, true3s_brits], [pred9s_brits, pred6s_brits, pred3s_brits]
 
 def convert_brits(data, WINDOW_SIZE, COARSE):
-    rec = {}
-    value = np.transpose(data[0])
-    masks = np.ones(value.shape) # 300, 12
-    for k in range(WINDOW_SIZE//COARSE):
-        masks[k*COARSE+1:(k+1)*COARSE, 0] = 0
+    periodic = np.zeros((1,WINDOW_SIZE))
+    time = [int(a) for a in data[2]]
+    periodic[0,time] = data[1][time]
+    value = np.transpose(np.concatenate((periodic, data[0])))
+    masks = np.ones(value.shape) # 300, 8
+    for k in range(WINDOW_SIZE):
+        if k not in time:
+            masks[k, 0] = 0
     evals = value.copy()
     evals[:,0] = data[1]
     eval_masks = np.zeros(evals.shape)
     eval_masks[:,0] = 1
+    rec = {}
     rec['forward'] = parse_rec(value, masks, evals, eval_masks, dir_='forward', WINDOW_SIZE=WINDOW_SIZE)
     rec['backward'] = parse_rec(value[::-1], masks[::-1], evals[::-1], eval_masks[::-1], dir_='backward', WINDOW_SIZE=WINDOW_SIZE)
     return [rec]

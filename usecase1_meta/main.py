@@ -29,13 +29,13 @@ def main(config):
 
     # Load data
     rack_data_train = []
-    for i in range(0,5):   ##### TODO!!!!!!! change the num
+    for i in range(0,5):  
         x = Preprocessor(rackID = i)
         if x.assign == True:
             rack_data_train.append(x)
 
     rack_data_test = []
-    for i in range(0,5):  ##### TODO!!!!!!! change the num
+    for i in range(0,5): 
         x = Preprocessor(rackID = i)
         if x.assign == True:
             rack_data_test.append(x)

@@ -31,7 +31,7 @@ python main.py --z2n_model_dir ./checkpoints/z2n_model.torch --task eval_downstr
 
 In the above command, `z2n_model_dir` is the path to the trained Zoom2Net model; `task` is to denote evaluating downstream tasks (i.e. bursts analysis); getting results from baselines mentioned in the paper (i.e. KNN, training Brits from scratch) can take up to an hour, so we preload the evaluation data using `--compute_baselines False`. If you want to train the baselines from scratch, use `--compute_baselines True`. 
 
-The command will produce results shown in Figure 8 and Figure 9 in the paper. 
+The command will produce results shown in Figure 8a and Figure 9a in the paper. 
 
 ## Perform running time analysis
 ```bash

@@ -37,14 +37,11 @@ def main(config):
     WINDOW_SKIP = config.window_skip
     COARSE = config.zoom_in_factor
 
-    # Load data
+    # Load data  
     pf_list_B5L3= load_dataset('B5L3')
-    # pf_list_B5L5= load_dataset('B5L5')
-    # pf_list_B3L3F9= load_dataset('B3L3F9')
-    # pf_list_dctcp_B7L3F3= load_dataset('dctcp_B7L3F3')
-    pf_list_B5L5= []
-    pf_list_B3L3F9= []
-    pf_list_dctcp_B7L3F3= []
+    pf_list_B5L5= load_dataset('B5L5')
+    pf_list_B3L3F9= load_dataset('B3L3F9')
+    pf_list_dctcp_B7L3F3= load_dataset('dctcp_B7L3F3')
 
     d_train = np.concatenate((pf_list_B5L3[0:8], pf_list_B5L5[0:8], pf_list_B3L3F9[0:8], pf_list_dctcp_B7L3F3[0:8]))
     d_test = np.concatenate((pf_list_B5L3[8:10], pf_list_B5L5[8:10], pf_list_B3L3F9[8:10], pf_list_dctcp_B7L3F3[8:10]))
@@ -88,8 +85,6 @@ def main(config):
         run_uncertainty(config, processed_test_dataset)
     elif config.task == 'train':
         num_window = int(WINDOW_SIZE / COARSE)
-        print(f"Training data size: {len(processed_train_dataset)}")
-        print(f"Testing data size: {len(processed_test_dataset)}")
         print(processed_train_dataset[0][0].shape)
         train_z2n(config, processed_train_dataset, processed_test_dataset, 
                     train_dataset, test_dataset, seed)

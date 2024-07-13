@@ -184,7 +184,6 @@ def train(model, data_iter_train, data_iter_test):
             if idx % 20 == 0:
                 print(f"Epoch: {epoch}, {(idx + 1) * 100.0 / len(data_iter_train)}, loss: {run_loss / (idx + 1.0)}")
         mae, mre = evaluate(model, data_iter_test)
-        break ####TODO!!!!!!!!!!!! Remove
         if early_stopper.early_stop(mae):             
             break
 

@@ -113,8 +113,8 @@ def test_ml_prediction_parallel(summation, output, congestion, config, ingressBy
     result = np.zeros(WINDOW_SIZE)
     pool = Pool(WINDOW_SIZE//COARSE)
     
-    for return_val in pool.map(partial(parallel, summation=(summation), output=output, congestion=congestion), \
-                                ingressBytes_max=ingressBytes_max, COARSE=COARSE, np.arange(WINDOW_SIZE//COARSE)):
+    for return_val in pool.map(partial(parallel, summation=(summation), output=output, congestion=congestion, \
+                                ingressBytes_max=ingressBytes_max, COARSE=COARSE), np.arange(WINDOW_SIZE//COARSE)):
         if return_val != None:
             result[return_val[0]*COARSE:(return_val[0]+1)*COARSE] = return_val[1]
     

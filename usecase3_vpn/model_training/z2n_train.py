@@ -9,7 +9,6 @@ from torch.utils.data import Dataset, DataLoader
 
 from model_training.transformer import TSTransformerEncoder
 from model_training import utils
-from model_training.data_refinement import data_refinement
 
 def set_seed(seed):
     random.seed(seed)
@@ -21,22 +20,19 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
     print ("Seeded everything")
 
-def train_z2n(config, train_dataset_processed, test_dataset_processed, train_dataset, \
-                test_dataset, seed):
+def train_z2n(config, train_dataset_processed, test_dataset_processed, seed):
     set_seed(seed)
     WINDOW_SIZE = config.window_size
     WINDOW_SKIP = config.window_skip
     COARSE = config.zoom_in_factor
     feat_dim = config.feat_dim
-    # Data refinement
-    train_dataset_refined = data_refinement(train_dataset_processed, train_dataset, test_dataset, config)
 
     # Training setup
     dim_output = 1
     d_model = config.d_model
     n_heads = config.n_heads
     num_layers = config.num_layers
-    max_len = 7*int(WINDOW_SIZE / COARSE)
+    max_len = 1
     dim_feedforward = config.dim_feedforward
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -59,10 +55,10 @@ def train_z2n(config, train_dataset_processed, test_dataset_processed, train_dat
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer)
 
     batch_size = config.batch_size
-    train_loader = DataLoader(train_dataset_refined, batch_size=batch_size, num_workers=4, shuffle=True)
+    train_loader = DataLoader(train_dataset_processed, batch_size=batch_size, num_workers=4, shuffle=True)
     test_loader = DataLoader(test_dataset_processed, batch_size=1, num_workers=1, shuffle=False)
     mu = config.mu_lagrange
-    update_train_dataset = train_dataset_refined
+    update_train_dataset = train_dataset_processed
     total_constr_error = []
     sum_constr_error = []
     retrans_constr_error = []

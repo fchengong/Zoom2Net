@@ -11,6 +11,8 @@ my_proj/
 *.gz
 *.zip
 pickles_artifact/
+mlab_data/
+vpn_data/
 
 # Models
 *.pth
