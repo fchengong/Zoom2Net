@@ -85,7 +85,8 @@ def downstream_task(res_pred, res_true, rackdata_len, throughput_threshold):
                 q_max_03 = 0.3
                 bursts_val_true, bursts_index_true = burst_detection(res_true[setting][queue], th, q_max_01, q_max_03)
                 bursts_val_pred, bursts_index_pred = burst_detection(res_pred[setting][queue], th, q_max_01, q_max_03)
-                                
+                if len(bursts_val_true) == 0:
+                    continue
                 for _ in range(len(res_true)):
                     stop = True
                     for i in range(len(bursts_index_true)):
@@ -138,6 +139,8 @@ def downstream_task(res_pred, res_true, rackdata_len, throughput_threshold):
                     burststart_true.append(np.argmax(i)+bursts_index_true[n][0])
                 for n, i in enumerate(bursts_val_pred):
                     burststart_pred.append(np.argmax(i)+bursts_index_pred[n][0])
+                if len(burststart_pred) == 0:
+                    burststart_pred = [0]
                 distance, path = fastdtw(burststart_true, burststart_pred)
                 burststart.append(distance)
 

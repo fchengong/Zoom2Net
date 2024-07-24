@@ -74,7 +74,7 @@ def impute_data(config, model, test_dataset, rackdata_len, ingressBytes_max, tim
                         summation = [sum(test_dataset[j][1][server][i*COARSE:(i+1)*COARSE]*ingressBytes_max) \
                                         for i in range(WINDOW_SIZE // COARSE)]    
                         fixed = test_ml_prediction_parallel(summation, x*ingressBytes_max, \
-                                        test_dataset[j][0][server][4], config, ingressBytes_max)
+                                        test_dataset[j][0][server][4], ingressBytes_max, WINDOW_SIZE, COARSE)
                         if timing:
                             end_time = time.time()
                             execution_time = end_time - start_time
@@ -107,9 +107,7 @@ def is_capsule(o):
     t = type(o)
     return t.__module__ == 'builtins' and t.__name__ == 'PyCapsule'
 
-def test_ml_prediction_parallel(summation, output, congestion, config, ingressBytes_max): 
-    WINDOW_SIZE = config.window_size
-    COARSE = config.zoom_in_factor
+def test_ml_prediction_parallel(summation, output, congestion, ingressBytes_max, WINDOW_SIZE, COARSE): 
     result = np.zeros(WINDOW_SIZE)
     pool = Pool(WINDOW_SIZE//COARSE)
     
