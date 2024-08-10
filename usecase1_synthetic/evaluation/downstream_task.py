@@ -85,6 +85,7 @@ def downstream_task(res_pred, res_true, rackdata_len, throughput_threshold):
                 q_max_03 = 0.3
                 bursts_val_true, bursts_index_true = burst_detection(res_true[setting][queue], th, q_max_01, q_max_03)
                 bursts_val_pred, bursts_index_pred = burst_detection(res_pred[setting][queue], th, q_max_01, q_max_03)
+                # print('before bursts')
                 if len(bursts_val_true) == 0:
                     continue
                 for _ in range(len(res_true)):
@@ -114,6 +115,7 @@ def downstream_task(res_pred, res_true, rackdata_len, throughput_threshold):
                 num_burst_true = len(bursts_val_true)
                 num_burst_pred = len(bursts_val_pred)
     #             print('num_burst_true: ', num_burst_true, 'num_burst_pred: ', num_burst_pred)
+                # print('add to num_bursts')
                 if num_burst_true == 0:
                     num_bursts.append(abs(num_burst_true - num_burst_pred) / 1)
                 else:
@@ -186,12 +188,20 @@ def downstream_task(res_pred, res_true, rackdata_len, throughput_threshold):
             p90_perqueue += sum(p90) / len(p90)
             p99_perqueue += sum(p99) / len(p99)
             emd_perqueue += sum(emd) / len(emd)
-            num_bursts_perqueue += sum(num_bursts) / len(num_bursts)
-            burstmax_perqueue += sum(burstmax) / len(burstmax)
-            burststart_perqueue += sum(burststart) / len(burststart)
-            burstvol_perqueue += sum(burstvol) / len(burstvol)
-            burst_interarrival_perqueue += sum(burst_interarrival) / len(burst_interarrival)
-            burstduration_perqueue += (sum(burstduration) / len(burstduration))
+            if len(num_bursts) != 0:
+                num_bursts_perqueue += sum(num_bursts) / len(num_bursts) 
+                burstmax_perqueue += sum(burstmax) / len(burstmax)
+                burststart_perqueue += sum(burststart) / len(burststart)
+                burstvol_perqueue += sum(burstvol) / len(burstvol)
+                burst_interarrival_perqueue += sum(burst_interarrival) / len(burst_interarrival)
+                burstduration_perqueue += (sum(burstduration) / len(burstduration))
+            else:
+                num_bursts_perqueue += sum(num_bursts)
+                burstmax_perqueue += sum(burstmax) 
+                burststart_perqueue += sum(burststart)
+                burstvol_perqueue += sum(burstvol) 
+                burst_interarrival_perqueue += sum(burst_interarrival)
+                burstduration_perqueue += sum(burstduration)
             # add += 1
 
         result['MSE'].append(round(mse_perqueue/num_queue,3))

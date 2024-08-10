@@ -15,7 +15,7 @@ unzip datasets/synthetic_data.zip -d datasets/
 ## Train models from scratch
 
 ```bash
-python main.py --save_model_dir ./checkpoints/model.torch --task train --window_size 300 --zoom_in_factor 50
+python main.py --task train --window_size 300 --zoom_in_factor 50
 ```
 note: UserWarning is fine. It will be removed later for optimization purposes. 
 
