@@ -37,8 +37,8 @@ def downstream_task(res_pred, res_true, rackdata_len, ingressBytes_max):
         
         bursts_val_true, bursts_index_true = burst_detection(res_true[i], line_rate/2/normalization)
         # print('get here1')
-        # if len(bursts_val_true) == 0:
-        #     continue
+        if len(bursts_val_true) == 0:
+            continue
         bursts_val_pred, bursts_index_pred = burst_detection(res_pred[i], line_rate/2/normalization)
         
     ####################  MSE  ##################
