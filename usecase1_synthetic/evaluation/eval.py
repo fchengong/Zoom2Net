@@ -59,16 +59,19 @@ def run_downstream_task(config, test_dataset, train_dataset, rackdata_len, throu
 
 def run_timing(config, test_dataset, rackdata_len, res_queue_max):
     timing = True
-    model = load_model(config, config.z2n_model_dir, d_model=config.d_model, n_heads=config.n_heads, dim_feedforward=config.dim_feedforward, 
+    model_odd = load_model(config, config.z2n_model_dir_odd, d_model=config.d_model, n_heads=config.n_heads, dim_feedforward=config.dim_feedforward, 
                                 max_len=42, zoom_in_factor=config.zoom_in_factor, window_size=config.window_size)
-    model.eval()
-    _, _, time_spend = impute_data(config, model, test_dataset, rackdata_len, res_queue_max, timing, \
+    model_odd.eval()
+    model_even = load_model(config, config.z2n_model_dir_even, d_model=40, n_heads=config.n_heads, dim_feedforward=20, 
+                                max_len=36, zoom_in_factor=config.zoom_in_factor, window_size=config.window_size)
+    model_even.eval()
+    _, _, time_spend = impute_data(config, model_even, model_odd, test_dataset, rackdata_len, res_queue_max, timing, \
                                 config.window_size, config.window_skip, config.zoom_in_factor)
     print(sum(time_spend) / len(time_spend))
 
 def run_uncertainty(config, test_dataset):
     timing = True
-    model = load_model(config, config.z2n_model_dir, d_model=config.d_model, n_heads=config.n_heads, dim_feedforward=config.dim_feedforward, 
+    model = load_model(config, config.z2n_model_dir_odd, d_model=config.d_model, n_heads=config.n_heads, dim_feedforward=config.dim_feedforward, 
                                 max_len=42, zoom_in_factor=config.zoom_in_factor, window_size=config.window_size)
     model.eval()
     conf = [] 
