@@ -13,7 +13,7 @@ from model_training.transformer import TSTransformerEncoder
 
 def run_downstream_task(config, test_dataset, train_dataset, rackdata_len, ingressBytes_max):
     res_brits = brits(config, test_dataset, train_dataset, rackdata_len, ingressBytes_max)
-    print('brits')
+    print('brits', res_brits)
     timing = False
     model = load_model(config, config.z2n_model_dir, d_model=config.d_model, n_heads=config.n_heads, dim_feedforward=config.dim_feedforward, 
                                 zoom_in_factor=config.zoom_in_factor, window_size=config.window_size)
@@ -21,16 +21,16 @@ def run_downstream_task(config, test_dataset, train_dataset, rackdata_len, ingre
     res_pred_z2n, res_true_z2n, _ = impute_data(config, model, test_dataset, rackdata_len, ingressBytes_max, timing,\
                                     config.window_size, config.window_skip, config.zoom_in_factor)
     res_z2n = downstream_task(res_pred_z2n, res_true_z2n, rackdata_len, ingressBytes_max)
-    print('z2n')
+    print('z2n', res_z2n)
 
     res_knn = knn(config, test_dataset, train_dataset, rackdata_len, ingressBytes_max)
-    print('knn')
+    print('knn', res_knn)
 
     res_plain = plain_transformer(config, test_dataset, rackdata_len, ingressBytes_max)
-    print('plain')
+    print('plain', res_plain)
 
     res_iter = iter_imputer(config, test_dataset, rackdata_len, ingressBytes_max)
-    print('iter')
+    print('iter', res_iter)
     plot(res_z2n, res_knn, res_iter, res_plain, res_brits)
 
 def run_timing(config, test_dataset, rackdata_len, ingressBytes_max):
@@ -90,11 +90,14 @@ def plot(res_z2n, res_knn, res_iter, res_plain, res_brits):
         below_threshold = mean
         ax.bar((x+(i-2)* width), below_threshold, width, label = methods[i],\
             error_kw=dict(lw=1, capsize=1, capthick=1),capsize=2, color=cmap(i*50), edgecolor='k')
+        print(methods[i])
+        print(below_threshold)
     ax.set_xticks(x)
     ax.set_xticklabels(stats, fontsize=11)
     ax.legend(fontsize=11, ncol=3, loc='upper left')
     ax.grid(linestyle='--', axis='y')
     ax.set_axisbelow(True)
+    plt.savefig('accuracy.png')
 
     a = np.stack((res_z2n['Burst_start_pos'], res_z2n['Burst_height'], res_z2n['Burst_freq'], \
     res_z2n['Burst_duration'], res_z2n['Burst_volume'], res_z2n['IngressAfterBurst'], res_z2n['Total_ingress'])) # (3, 10)
@@ -145,8 +148,11 @@ def plot(res_z2n, res_knn, res_iter, res_plain, res_brits):
         below_threshold = mean
         ax.bar((x+(i-2)* width), below_threshold, width, label = methods[i],\
             error_kw=dict(lw=1, capsize=1, capthick=1),capsize=2, color=cmap(i*50), edgecolor='k')
+        print(methods[i])
+        print(below_threshold)
     ax.set_xticks(x+0.25)
     ax.set_xticklabels(stats, rotation=30)
     ax.legend(fontsize=10, ncol=3, loc='upper left')
     ax.grid(linestyle='--', axis='y')
     ax.set_axisbelow(True)
+    plt.savefig('downstream.png')

@@ -192,3 +192,27 @@ def inference(
         features[0, :, :,:] = torch.from_numpy(datapoint)
         imputed_time_series = model(features[:,:,:])
         return imputed_time_series
+
+def convert_even_plain(data):
+    a = np.zeros((8,6,6))
+    for i in range(8):
+        for j in range(6):
+            a[i,0,j] = data[i*2][0][j*50]
+            a[i,1,j] = data[i*2][3][j*50]
+            a[i,2,j] = data[i*2+1][0][j*50]
+            a[i,3,j] = data[i*2+1][3][j*50]
+            a[i,4,j] = data[i*2][1][j*50]
+            a[i,5,j] = data[i*2][2][j*50]
+    return a
+
+def convert_odd_plain(data):
+    a = np.zeros((8,6,6))
+    for i in range(8):
+        for j in range(6):
+            a[i,0,j] = data[i*2][0][j*50] 
+            a[i,1,j] = data[i*2][3][j*50]
+            a[i,2,j] = data[i*2+1][0][j*50]
+            a[i,3,j] = data[i*2+1][3][j*50]
+            a[i,4,j] = data[i*2][1][j*50]
+            a[i,5,j] = data[i*2][2][j*50]
+    return a

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
 import torch
+import pickle
 
 # Project modules
 from evaluation.downstream_task import downstream_task
@@ -13,25 +14,47 @@ from evaluation.get_certainty_score import pred_withconf
 
 def run_downstream_task(config, test_dataset, train_dataset, rackdata_len, throughput_threshold, res_queue_max):
     res_brits = brits(config, test_dataset, train_dataset, rackdata_len, throughput_threshold)
-    print('brits')
+    print('brits', res_brits)
     timing = False
-    model = load_model(config, config.z2n_model_dir, d_model=config.d_model, n_heads=config.n_heads, dim_feedforward=config.dim_feedforward, 
+    model_odd = load_model(config, config.z2n_model_dir_odd, d_model=config.d_model, n_heads=config.n_heads, dim_feedforward=config.dim_feedforward, 
                                 max_len=42, zoom_in_factor=config.zoom_in_factor, window_size=config.window_size)
-    model.eval()
-    res_pred_z2n, res_true_z2n, _ = impute_data(config, model, test_dataset, rackdata_len, res_queue_max, timing,\
+    model_odd.eval()
+    model_even = load_model(config, config.z2n_model_dir_even, d_model=40, n_heads=config.n_heads, dim_feedforward=20, 
+                                max_len=36, zoom_in_factor=config.zoom_in_factor, window_size=config.window_size)
+    model_even.eval()
+    res_pred_z2n, res_true_z2n, _ = impute_data(config, model_even, model_odd, test_dataset, rackdata_len, res_queue_max, timing,\
                                     config.window_size, config.window_skip, config.zoom_in_factor)
-    print(f"res_pred_z2n: {res_pred_z2n.shape}, res_true_z2n: {res_true_z2n.shape}")
+    
+    ####
+    # p = np.arange(0,9900,50)
+    # for i in range(rackdata_len):
+    #     for queue in range(16):
+    #         res_pred_z2n[i][queue][p] = res_true_z2n[i][queue][p]
+    ####
+
     res_z2n = downstream_task(res_pred_z2n, res_true_z2n, rackdata_len, throughput_threshold)
-    print('z2n')
+    print('z2n', res_z2n)
 
     res_knn = knn(config, test_dataset, train_dataset, rackdata_len, throughput_threshold)
-    print('knn')
+    print('knn', res_knn)
 
     res_plain = plain_transformer(config, test_dataset, rackdata_len, throughput_threshold)
-    print('plain')
+    print('plain', res_plain)
 
     res_iter = iter_imputer(config, test_dataset, rackdata_len, throughput_threshold)
-    print('iter')
+    print('iter', res_iter)
+    # save = [res_z2n, res_knn, res_iter, res_plain, res_brits]
+    ## with open("evaluation/saved_data/plotted_res_new.pickle", "wb") as fout:
+    ##     pickle.dump(save, fout)
+    # with open("evaluation/saved_data/plotted_res_new.pickle", "rb") as fin:
+    #     a = pickle.load(fin)
+    #     fin.close()
+    # [res_z2n, res_knn, res_iter, res_plain, res_brits] = a
+    print('brits', res_brits)
+    print('z2n', res_z2n)
+    print('plain', res_plain)
+    print('iter', res_iter)
+    print('knn', res_knn)
     plot(res_z2n, res_knn, res_iter, res_plain, res_brits)
 
 def run_timing(config, test_dataset, rackdata_len, res_queue_max):
@@ -87,26 +110,25 @@ def plot(res_z2n, res_knn, res_iter, res_plain, res_brits):
         r = all_methods[i].copy()
         for j in range(4):
             r[j] /= means[j] * 1.1 
-        if i !=2:
-            r[3] = r[3]*30
+        # if i !=2:
+        #     r[3] = r[3]*30
         x = np.array([0,2,4,6])
         width = 0.3
         mean = np.mean(r,axis=1)
-        if i == 0:
-            pass
-        else:
-            diff += sum(mean[1:4] - a)/3
         err_lo = mean - np.min(r,axis=1)
         err_hi = np.max(r,axis=1) - mean
         above_threshold = 0
         below_threshold = mean
         ax.bar((x+(i-2)* width), below_threshold, width, label = methods[i],\
             error_kw=dict(lw=1, capsize=1, capthick=1),capsize=2, color=cmap(i*50), edgecolor='k')
+        # print(methods[i])
+        # print(below_threshold)
     ax.set_xticks(x)
     ax.set_xticklabels(stats, fontsize=11)
     ax.legend(fontsize=11, ncol=3, loc='upper left')
     ax.grid(linestyle='--', axis='y')
     ax.set_axisbelow(True)
+    plt.savefig('accuracy.png')
 
     a = np.stack((res_z2n['Burst_start_pos'], res_z2n['Burst_height'], res_z2n['Burst_freq'], \
     res_z2n['Burst_interarrival'], res_z2n['Burst_duration'], res_z2n['Burst_volume'])) # (3, 10)
@@ -148,22 +170,20 @@ def plot(res_z2n, res_knn, res_iter, res_plain, res_brits):
         x = np.arange(0,18,3)
         width = 0.45
         mean = np.mean(r,axis=1)
-        if i == 0:
-            a = mean
-        else:
-            diff += sum(mean - a)/len(mean)
         std = np.std(r,axis=1)
         err_lo = mean - np.min(r,axis=1)
         err_hi = np.max(r,axis=1) - mean
         above_threshold = np.maximum(mean - 100, 0)
         below_threshold = np.minimum(mean, 100)
     #     print(x+(i-1.5)* width)
-        print(methods[i], mean)
 
         ax.bar(x+(i-1.5)* width, below_threshold, width, label = methods[i],\
             capsize=2, color=cmap(i*50), edgecolor='k')
+        # print(methods[i])
+        # print(below_threshold)
     ax.set_xticks(x+0.25)
     ax.set_xticklabels(stats, rotation=30)
     ax.legend(fontsize=10, ncol=3, loc='upper left')
     ax.grid(linestyle='--', axis='y')
     ax.set_axisbelow(True)
+    plt.savefig('downstream.png')

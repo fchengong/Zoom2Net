@@ -42,9 +42,21 @@ def main(config):
     pf_list_B5L5= load_dataset('B5L5')
     pf_list_B3L3F9= load_dataset('B3L3F9')
     pf_list_dctcp_B7L3F3= load_dataset('dctcp_B7L3F3')
+    pf_list_B3L3 = load_dataset('B3L3')
+    pf_list_B7L3 = load_dataset('B7L3')
+    pf_list_B7L7F7 = load_dataset('B7L7F7')
+    pf_list_B9L7 = load_dataset('B9L7')
+    pf_list_B9L9 = load_dataset('B9L9')
+    dctcp_B9L9 = load_dataset('dctcp_B9L9')
+    dctcp_B7L7F7 = load_dataset('dctcp_B7L7F7')
+
+
+    d_test = np.concatenate((pf_list_B3L3[8:10], pf_list_dctcp_B7L3F3[8:10], pf_list_B3L3F9[7:10], pf_list_B7L3[8:10],\
+                         pf_list_B5L5[8:10], pf_list_B7L7F7[7:10],dctcp_B7L7F7[8:10],pf_list_B9L7[8:10], \
+                         pf_list_B9L9[8:10], dctcp_B9L9[8:10]))
 
     d_train = np.concatenate((pf_list_B5L3[0:8], pf_list_B5L5[0:8], pf_list_B3L3F9[0:8], pf_list_dctcp_B7L3F3[0:8]))
-    d_test = np.concatenate((pf_list_B5L3[8:10], pf_list_B5L5[8:10], pf_list_B3L3F9[8:10], pf_list_dctcp_B7L3F3[8:10]))
+    # d_test = np.concatenate((pf_list_B5L3[8:10], pf_list_B5L5[8:10], pf_list_B3L3F9[8:10], pf_list_dctcp_B7L3F3[8:10]))
     
     for i in range(len(d_train)):
         for j in range (160):

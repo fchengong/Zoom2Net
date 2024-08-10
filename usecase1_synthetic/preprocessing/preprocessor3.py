@@ -364,6 +364,30 @@ def convert(data):
             a[i,5,j] = data[i*2][2][j*50]
     return a
 
+def convert_odd(data):
+    a = np.zeros((8,6,6))
+    for i in range(8):
+        for j in range(6):
+            a[i,0,j] = data[i*2][0][j*50]
+            a[i,1,j] = data[i*2][3][j*50]
+            a[i,2,j] = data[i*2+1][0][j*50] *2
+            a[i,3,j] = data[i*2+1][3][j*50]
+            a[i,4,j] = data[i*2][1][j*50]
+            a[i,5,j] = data[i*2][2][j*50]
+    return a
+
+def convert_even(data):
+    a = np.zeros((8,6,6))
+    for i in range(8):
+        for j in range(6):
+            a[i,0,j] = data[i*2][0][j*50] * 10
+            a[i,1,j] = data[i*2][3][j*50]
+            a[i,2,j] = data[i*2+1][0][j*50]
+            a[i,3,j] = data[i*2+1][3][j*50]
+            a[i,4,j] = data[i*2][1][j*50]
+            a[i,5,j] = data[i*2][2][j*50]
+    return a
+
 def process_data(config, train_dataset, test_dataset, include_cca):
     WINDOW_SIZE = config.window_size
     WINDOW_SKIP = config.window_skip

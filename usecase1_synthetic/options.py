@@ -8,9 +8,13 @@ class Options(object):
         # Handle command line arguments
         self.parser = argparse.ArgumentParser(
             description='Run a complete training pipeline. Optionally, a JSON configuration file can be used, to overwrite command-line arguments.')
-        self.parser.add_argument('--plain_model_dir', default='./checkpoints/plain_model.torch',
+        self.parser.add_argument('--plain_model_dir_odd', default='./checkpoints/plain_model_odd.torch',
                                  help='Directory to plain transformer model')
-        self.parser.add_argument('--z2n_model_dir', default='./checkpoints/z2n_model.torch',
+        self.parser.add_argument('--plain_model_dir_even', default='./checkpoints/plain_model_even.torch',
+                                 help='Directory to plain transformer model')
+        self.parser.add_argument('--z2n_model_dir_odd', default='./checkpoints/z2n_model_odd.torch',
+                                 help='Directory to trained Zomm2Net model') 
+        self.parser.add_argument('--z2n_model_dir_even', default='./checkpoints/z2n_model_even.torch',
                                  help='Directory to trained Zomm2Net model') 
         self.parser.add_argument('--save_model_dir', default='./checkpoints/trained.torch',
                                  help='Directory to save model') 

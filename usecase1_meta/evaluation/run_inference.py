@@ -80,7 +80,7 @@ def impute_data(config, model, test_dataset, rackdata_len, ingressBytes_max, tim
                             execution_time = end_time - start_time
                             time_spend.append(execution_time/(WINDOW_SIZE // COARSE))
                         res_true[i,server,cnt,:] = (test_dataset[j][1][server])
-                        res_pred[i,server,cnt,:] = fixed
+                        res_pred[i,server,cnt,:] = fixed/ingressBytes_max
                         cnt += 1
                     
     res_true = np.reshape(res_true, (rackdata_len,92,num_WINDOW*WINDOW_SIZE))

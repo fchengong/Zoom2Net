@@ -24,7 +24,7 @@ class Options(object):
         # Data preparation
         self.parser.add_argument('--window_size', type=int, default=1000,
                                  help='Number of time series data in one pass')
-        self.parser.add_argument('--window_skip', type=int, default=100,
+        self.parser.add_argument('--window_skip', type=int, default=500,
                                  help='Number of time series data to skip in data preprocessing')
         self.parser.add_argument('--zoom_in_factor', type=int, default=50,
                                  help='zoom-in factor')

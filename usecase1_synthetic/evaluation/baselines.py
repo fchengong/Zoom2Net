@@ -7,7 +7,7 @@ from sklearn.impute import IterativeImputer
 
 from evaluation.downstream_task import downstream_task
 from model_training.transformer import TSTransformerEncoder
-from model_training.utils import inference, inference_withoutCCA
+from model_training.utils import inference, inference_withoutCCA, convert_even_plain, convert_odd_plain
 from evaluation.brits import model, train_brits
 from evaluation.run_inference import load_model
 from preprocessing.preprocessor3 import convert
@@ -36,7 +36,7 @@ def myFunc(e):
     return e['dist']
 
 def prepare_knn_data(train_dataset, indexes):
-    train_dataset_knn = []
+    train_dataset_knn_even = []
     for i in range(len(train_dataset)):
         converted = convert(train_dataset[i][0])
         for j in range(8):
@@ -44,9 +44,18 @@ def prepare_knn_data(train_dataset, indexes):
             a = np.expand_dims(converted[j], axis=0)
             b = np.expand_dims(b, axis=0)
             d = np.concatenate((a,b))
-            train_dataset_knn.append((d, train_dataset[i][1][2*j+1]))
+            train_dataset_knn_even.append((d, train_dataset[i][1][2*j]))
+    train_dataset_knn_odd = []
+    for i in range(len(train_dataset)):
+        converted = convert(train_dataset[i][0])
+        for j in range(8):
+            b = (np.sum(converted[indexes[j]], axis=0))/7
+            a = np.expand_dims(converted[j], axis=0)
+            b = np.expand_dims(b, axis=0)
+            d = np.concatenate((a,b))
+            train_dataset_knn_odd.append((d, train_dataset[i][1][2*j+1]))
             
-    return train_dataset_knn
+    return train_dataset_knn_even, train_dataset_knn_odd
 
 def knn(config, test_dataset, train_dataset, rackdata_len, ingressBytes_max):
     WINDOW_SKIP = config.window_skip
@@ -65,7 +74,7 @@ def knn(config, test_dataset, train_dataset, rackdata_len, ingressBytes_max):
         with open("evaluation/saved_data/res_pred_knn.pickle", "rb") as fin:
             res_pred_knn = pickle.load(fin)
             fin.close()
-        res_true_knn = np.zeros((rackdata_len, 8, 33, 300))
+        res_true_knn = np.zeros((rackdata_len, 16, 33, 300))
         for q in evenq:
             feature_ports = q
             label_ports_even = q*2
@@ -75,15 +84,16 @@ def knn(config, test_dataset, train_dataset, rackdata_len, ingressBytes_max):
                 for j in range(i*num_intervals, (i+1)*num_intervals):
                     if (j < num_intervals and j % skipped == 0) \
                         or (j >= num_intervals * i and (j - num_intervals * i) % skipped == 0):
-                        res_true_knn[i,feature_ports,cnt,:] = test_dataset[j][1][label_ports_odd]
+                        res_true_knn[i,label_ports_odd,cnt,:] = test_dataset[j][1][label_ports_odd]
+                        res_true_knn[i,label_ports_even,cnt,:] = test_dataset[j][1][label_ports_even]
                         cnt += 1
-        res_true_knn = np.reshape(res_true_knn, (rackdata_len,8,9900))
+        res_true_knn = np.reshape(res_true_knn, (rackdata_len,16,9900))
     else:
         # Run KNN froms scrach
         k = 4
-        res_true_knn = np.zeros((rackdata_len, 8, 33, 300))
-        res_pred_knn = np.zeros((rackdata_len, 8, 33, 300))
-        train_dataset_knn = prepare_knn_data(train_dataset, indexes)
+        res_true_knn = np.zeros((rackdata_len, 16, 33, 300))
+        res_pred_knn = np.zeros((rackdata_len, 16, 33, 300))
+        train_dataset_knn_even, train_dataset_knn_odd = prepare_knn_data(train_dataset, indexes)
         for q in evenq:
             feature_ports = q
             label_ports_even = q*2
@@ -93,15 +103,23 @@ def knn(config, test_dataset, train_dataset, rackdata_len, ingressBytes_max):
                 for j in range(i*num_intervals, (i+1)*num_intervals):
                     if (j < num_intervals and j % skipped == 0) \
                         or (j >= num_intervals * i and (j - num_intervals * i) % skipped == 0):
-                        n = neighbors(j, k, feature_ports, indexes, train_dataset_knn, test_dataset)
+                        n = neighbors(j, k, feature_ports, indexes, train_dataset_knn_odd, test_dataset)
                         x = [train_dataset_knn[z][1] for z in n]
                         x = np.array(x)
                         r = np.sum(x, axis = 0) / k
-                        res_true_knn[i,feature_ports,cnt,:] = test_dataset[j][1][label_ports_odd]
-                        res_pred_knn[i,feature_ports,cnt,:] = r
+                        res_true_knn[i,label_ports_odd,cnt,:] = test_dataset[j][1][label_ports_odd]
+                        res_pred_knn[i,label_ports_odd,cnt,:] = r
+
+                        n = neighbors(j, k, feature_ports, indexes, train_dataset_knn_even, test_dataset)
+                        x = [train_dataset_knn[z][1] for z in n]
+                        x = np.array(x)
+                        r = np.sum(x, axis = 0) / k
+                        res_true_knn[i,label_ports_even,cnt,:] = test_dataset[j][1][label_ports_even]
+                        res_pred_knn[i,label_ports_even,cnt,:] = r
                         cnt += 1
-        res_true_knn = np.reshape(res_true_knn, (rackdata_len,8,9900))
-        res_pred_knn = np.reshape(res_pred_knn, (rackdata_len,8,9900))
+                        
+        res_true_knn = np.reshape(res_true_knn, (rackdata_len,16,9900))
+        res_pred_knn = np.reshape(res_pred_knn, (rackdata_len,16,9900))
 
     res_knn = downstream_task(res_pred_knn, res_true_knn, rackdata_len, ingressBytes_max)
 
@@ -111,9 +129,12 @@ def plain_transformer(config, test_dataset, rackdata_len, ingressBytes_max):
     WINDOW_SKIP = config.window_skip
     WINDOW_SIZE = config.window_size
     COARSE = config.zoom_in_factor
-    model_plain = load_model(config, config.plain_model_dir, d_model=40, n_heads=config.n_heads, dim_feedforward=20, 
+    model_plain_odd = load_model(config, config.plain_model_dir_odd, d_model=40, n_heads=config.n_heads, dim_feedforward=20, 
                                 max_len=36, zoom_in_factor=config.zoom_in_factor, window_size=config.window_size)
-    model_plain.eval()
+    model_plain_odd.eval()
+    model_plain_even = load_model(config, config.plain_model_dir_odd, d_model=40, n_heads=config.n_heads, dim_feedforward=20, 
+                                max_len=36, zoom_in_factor=config.zoom_in_factor, window_size=config.window_size)
+    model_plain_even.eval()
 
     indexes = []
     for i in range(8):
@@ -121,8 +142,8 @@ def plain_transformer(config, test_dataset, rackdata_len, ingressBytes_max):
         b = list(range(i+1,8))
         indexes.append((a+b))
     even = np.arange(0,8)
-    res_true_plain = np.zeros((rackdata_len, 8, 33, 300))
-    res_pred_plain = np.zeros((rackdata_len, 8, 33, 300))
+    res_true_plain = np.zeros((rackdata_len, 16, 33, 300))
+    res_pred_plain = np.zeros((rackdata_len, 16, 33, 300))
     num_intervals = 33
     skipped = WINDOW_SIZE // WINDOW_SKIP
     for q in even:
@@ -134,16 +155,25 @@ def plain_transformer(config, test_dataset, rackdata_len, ingressBytes_max):
             for j in range(i*num_intervals, (i+1)*num_intervals):
                 if (j < num_intervals and j % skipped == 0) or \
                 (j >= num_intervals * i and (j - num_intervals * i) % skipped == 0):
-                    converted = convert(test_dataset[j][0])
+
+                    converted = convert_even_plain(test_dataset[j][0])
                     b = (np.sum(converted[indexes[feature_ports]], axis=0))
                     a = np.expand_dims(converted[feature_ports], axis=0)
                     b = np.expand_dims(b, axis=0)/7
-                    x = inference_withoutCCA(model_plain, np.concatenate((a,b)), COARSE=COARSE)
-                    res_true_plain[i,feature_ports,cnt,:] = test_dataset[j][1][label_ports_odd]
-                    res_pred_plain[i,feature_ports,cnt,:] = x[0].cpu().numpy()
+                    x = inference_withoutCCA(model_plain_even, np.concatenate((a,b)), COARSE=COARSE)
+                    res_true_plain[i,label_ports_even,cnt,:] = test_dataset[j][1][label_ports_even]
+                    res_pred_plain[i,label_ports_even,cnt,:] = x[0].cpu().numpy()
+                    
+                    converted = convert_odd_plain(test_dataset[j][0])
+                    b = (np.sum(converted[indexes[feature_ports]], axis=0))
+                    a = np.expand_dims(converted[feature_ports], axis=0)
+                    b = np.expand_dims(b, axis=0)/7
+                    x = inference_withoutCCA(model_plain_odd, np.concatenate((a,b)), COARSE=COARSE)
+                    res_true_plain[i,label_ports_odd,cnt,:] = test_dataset[j][1][label_ports_odd]
+                    res_pred_plain[i,label_ports_odd,cnt,:] = x[0].cpu().numpy()
                     cnt += 1
-    res_true_plain = np.reshape(res_true_plain, (rackdata_len,8,9900))
-    res_pred_plain = np.reshape(res_pred_plain, (rackdata_len,8,9900))
+    res_true_plain = np.reshape(res_true_plain, (rackdata_len,16,9900))
+    res_pred_plain = np.reshape(res_pred_plain, (rackdata_len,16,9900))
 
     res_plain = downstream_task(res_pred_plain, res_true_plain, rackdata_len, ingressBytes_max)
 
@@ -182,7 +212,7 @@ def iter_imputer(config, test_dataset, rackdata_len, ingressBytes_max):
         with open("evaluation/saved_data/res_pred_iter.pickle", "rb") as fin:
             res_pred_iter = pickle.load(fin)
             fin.close()
-        res_true_iter = np.zeros((rackdata_len, 8, 33, 300))
+        res_true_iter = np.zeros((rackdata_len, 16, 33, 300))
         for q in even:
             feature_ports = q
             label_ports_even = q*2
@@ -192,14 +222,15 @@ def iter_imputer(config, test_dataset, rackdata_len, ingressBytes_max):
                 for j in range(i*num_intervals, (i+1)*num_intervals):
                     if (j < num_intervals and j % skipped == 0) \
                         or (j >= num_intervals * i and (j - num_intervals * i) % skipped == 0):
-                        res_true_iter[i,feature_ports,cnt,:] = test_dataset[j][1][label_ports_odd]
+                        res_true_iter[i,label_ports_odd,cnt,:] = test_dataset[j][1][label_ports_odd]
+                        res_true_iter[i,label_ports_even,cnt,:] = test_dataset[j][1][label_ports_even]
                         cnt += 1
-        res_true_iter = np.reshape(res_true_iter, (rackdata_len,8,9900))
+        res_true_iter = np.reshape(res_true_iter, (rackdata_len,16,9900))
     else:
         # Run IterImputer from scrach
         iter_imp = IterativeImputer(random_state=0)
-        res_true_iter = np.zeros((rackdata_len, 8, 33, 300))
-        res_pred_iter = np.zeros((rackdata_len, 8, 33, 300))
+        res_true_iter = np.zeros((rackdata_len, 16, 33, 300))
+        res_pred_iter = np.zeros((rackdata_len, 16, 33, 300))
         num_intervals = 33
         skipped = WINDOW_SIZE // WINDOW_SKIP
         for q in even:
@@ -216,12 +247,16 @@ def iter_imputer(config, test_dataset, rackdata_len, ingressBytes_max):
                         a = converted[feature_ports]
                         b = b/7
                         x = np.concatenate((a,b))
-                        res_true_iter[i,feature_ports,cnt,:] = test_dataset[j][1][label_ports_odd]
+                        res_true_iter[i,label_ports_even,cnt,:] = test_dataset[j][1][label_ports_even]
                         iter_res = iter_imp.fit_transform(x)
-                        res_pred_iter[i,feature_ports,cnt,:] = iter_res[2]
+                        res_pred_iter[i,label_ports_even,cnt,:] = iter_res[0]
+                        
+                        res_true_iter[i,label_ports_odd,cnt,:] = test_dataset[j][1][label_ports_odd]
+                        res_pred_iter[i,label_ports_odd,cnt,:] = iter_res[2]
+                        
                         cnt += 1
-        res_true_iter = np.reshape(res_true_iter, (rackdata_len,8,9900))
-        res_pred_iter = np.reshape(res_pred_iter, (rackdata_len,8,9900))
+        res_true_iter = np.reshape(res_true_iter, (rackdata_len,16,9900))
+        res_pred_iter = np.reshape(res_pred_iter, (rackdata_len,16,9900))
 
 
     res_iter = downstream_task(res_pred_iter, res_true_iter, rackdata_len, ingressBytes_max)
@@ -246,7 +281,7 @@ def brits(config, test_dataset, train_dataset, rackdata_len, throughput_threshol
         with open("evaluation/saved_data/res_pred_brits.pickle", "rb") as fin:
             res_pred_brits = pickle.load(fin)
             fin.close()
-        res_true_brits = np.zeros((rackdata_len, 8, 33, 300))
+        res_true_brits = np.zeros((rackdata_len, 16, 33, 300))
         for q in even:
             feature_ports = q
             label_ports_even = q*2
@@ -256,9 +291,10 @@ def brits(config, test_dataset, train_dataset, rackdata_len, throughput_threshol
                 for j in range(i*num_intervals, (i+1)*num_intervals):
                     if (j < num_intervals and j % skipped == 0) \
                         or (j >= num_intervals * i and (j - num_intervals * i) % skipped == 0):
-                        res_true_brits[i,feature_ports,cnt,:] = test_dataset[j][1][label_ports_odd]
+                        res_true_brits[i,label_ports_odd,cnt,:] = test_dataset[j][1][label_ports_odd]
+                        res_true_brits[i,label_ports_even,cnt,:] = test_dataset[j][1][label_ports_even]
                         cnt += 1
-        res_true_brits = np.reshape(res_true_brits, (rackdata_len,8,9900))
+        res_true_brits = np.reshape(res_true_brits, (rackdata_len,16,9900))
     else:
         # train Brits from scrach
         data_iter_train, data_iter_test = train_brits.prepare_brits_data(config,train_dataset, test_dataset)

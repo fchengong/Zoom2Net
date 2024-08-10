@@ -19,8 +19,8 @@ def downstream_task(res_pred, res_true, rackdata_len, throughput_threshold):
     result['99_percentile'] = []
     result['emd'] = []
     result['Autocorrelation'] = []
-    label_ports = np.arange(1,16,2)
-    num_queue = 8
+    label_ports = np.arange(0,16,1)
+    num_queue = 16
 
     for a in range(rackdata_len//2):
         mse_perqueue = 0
@@ -36,7 +36,7 @@ def downstream_task(res_pred, res_true, rackdata_len, throughput_threshold):
         burst_interarrival_perqueue = 0
         emd_perqueue = 0
 
-        for queue in range(8):
+        for queue in range(num_queue):
             res_true = np.array(res_true)
             res_pred = np.array(res_pred)
             mse = []
@@ -191,19 +191,19 @@ def downstream_task(res_pred, res_true, rackdata_len, throughput_threshold):
             burstduration_perqueue += (sum(burstduration) / len(burstduration))
             # add += 1
 
-    result['MSE'].append(round(mse_perqueue/num_queue,3))
-    result['Burst_start_pos'].append(round(burststart_perqueue/num_queue,3))
-    result['Burst_height'].append(round(burstmax_perqueue/num_queue,3))
-    result['Burst_freq'].append(round(num_bursts_perqueue/num_queue,3))
-    result['Burst_interarrival'].append(round(burst_interarrival_perqueue/num_queue,3))
-    result['Burst_duration'].append(round(burstduration_perqueue/num_queue,3))
-    result['Burst_volume'].append(round(burstvol_perqueue/num_queue,3))
-    result['Empty_queues'].append(round(zero_perqueue/num_queue,3))
-    result['90_percentile'].append(round(p90_perqueue/num_queue,3))
-    result['99_percentile'].append(round(p99_perqueue/num_queue,3))
-    result['emd'].append(round(emd_perqueue/num_queue,3))
-#     res['KS_test'].append(round(eight/num_queue,5))
-    result['Autocorrelation'].append(round(acorr_perqueue/num_queue,3))
+        result['MSE'].append(round(mse_perqueue/num_queue,3))
+        result['Burst_start_pos'].append(round(burststart_perqueue/num_queue,3))
+        result['Burst_height'].append(round(burstmax_perqueue/num_queue,3))
+        result['Burst_freq'].append(round(num_bursts_perqueue/num_queue,3))
+        result['Burst_interarrival'].append(round(burst_interarrival_perqueue/num_queue,3))
+        result['Burst_duration'].append(round(burstduration_perqueue/num_queue,3))
+        result['Burst_volume'].append(round(burstvol_perqueue/num_queue,3))
+        result['Empty_queues'].append(round(zero_perqueue/num_queue,3))
+        result['90_percentile'].append(round(p90_perqueue/num_queue,3))
+        result['99_percentile'].append(round(p99_perqueue/num_queue,3))
+        result['emd'].append(round(emd_perqueue/num_queue,3))
+    #     res['KS_test'].append(round(eight/num_queue,5))
+        result['Autocorrelation'].append(round(acorr_perqueue/num_queue,3))
     # result['MSE'] = (mse_final)
     # result['emd'] = (emd_final)
     # result['99_percentile'] = (p99_final)
