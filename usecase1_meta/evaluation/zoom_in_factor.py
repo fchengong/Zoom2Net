@@ -15,12 +15,13 @@ def zoom_in_factor(config, rack_data_test, rackdata_len, ingressBytes_max):
                                 zoom_in_factor=25, window_size=1000)
     model25.eval()
     window_size=1000
-    window_skip=300
+    window_skip=500
     coarse=25
     test_dataset25 = generate_datasets_pipeline(rack_data_test, window_size,
         window_skip,
         coarse,
         output_coarsening_factor = 1)
+    print(len(test_dataset25))
     res_pred_z2n_coarse25, res_true_z2n_coarse25, _ = impute_data(config, model25, test_dataset25, rackdata_len, ingressBytes_max, timing,
                             window_size, window_skip, coarse)
     coarse_25 = downstream_task(res_pred_z2n_coarse25, res_true_z2n_coarse25, rackdata_len, ingressBytes_max)
@@ -31,7 +32,7 @@ def zoom_in_factor(config, rack_data_test, rackdata_len, ingressBytes_max):
                             zoom_in_factor=config.zoom_in_factor, window_size=config.window_size)
     model50.eval()
     window_size=1000
-    window_skip=100
+    window_skip=500
     coarse=50
     test_dataset50 = generate_datasets_pipeline(rack_data_test, window_size,
         window_skip,
@@ -47,7 +48,7 @@ def zoom_in_factor(config, rack_data_test, rackdata_len, ingressBytes_max):
                             window_size=1000)
     model100.eval()
     window_size=1000
-    window_skip=300
+    window_skip=500
     coarse=100
     test_dataset100 = generate_datasets_pipeline(rack_data_test, window_size,
         window_skip,
@@ -108,6 +109,7 @@ def zoom_in_factor(config, rack_data_test, rackdata_len, ingressBytes_max):
     ax.spines['right'].set_visible(False)
     ax.tick_params(axis='both', which='major', labelsize=12)
     ax.tick_params(axis='both', which='minor', labelsize=12)
+    plt.savefig('accuracy_zoom_in_factor.png')
 
     a = np.stack((coarse_25['Burst_start_pos'], coarse_25['Burst_height'], coarse_25['Burst_freq'], \
     coarse_25['Burst_duration'], coarse_25['Burst_volume'], coarse_25['IngressAfterBurst'], coarse_25['Total_ingress']))
@@ -161,3 +163,4 @@ def zoom_in_factor(config, rack_data_test, rackdata_len, ingressBytes_max):
     ax.tick_params(axis='both', which='minor', labelsize=12)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+    plt.savefig('downstream_zoom_in_factor.png')
