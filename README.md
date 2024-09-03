@@ -1,11 +1,14 @@
 # Zoom2Net: Constrained Network Telemetry Imputation
 This code corresponds to the paper: **Zoom2Net: Constrained Network Telemetry Imputation**.
-This code has been tested with `Python 3.7` and `Pytorch 2.0`.
+This code has been tested with `Python 3.8` and `Pytorch 2.0`.
 
 ## Setup
 `cd zoom2net/`
 
 `pip install -r requirements.txt`
+
+## Hardware and Resource Requirements
+We train models for all use cases on an Nvidia Tesla T4-16GB GPU. It may take about 20-60min to finish for different cases.
 
 ## Run Zoom2Net for different usecases
 

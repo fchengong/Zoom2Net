@@ -79,7 +79,7 @@ def train_z2n(config, train_dataset_processed, test_dataset_processed, seed):
         # Continue until test data constraint violation stops decreasing
         print(f"Largrange iteration {iteration}")
         epoch = 0
-        train_early_stopper = utils.EarlyStopper(patience=5, min_delta=0.00000001)
+        train_early_stopper = utils.EarlyStopper(patience=5, min_delta=0.0001)
         test_early_stopper = utils.EarlyStopper(patience=1, min_delta=10000)
         while True:
             # Continue until test data loss stops decreasing
@@ -88,7 +88,7 @@ def train_z2n(config, train_dataset_processed, test_dataset_processed, seed):
             test_loader, optimizer, scheduler, config, mu=mu)
             training_loss.append(train_loss) 
             val_loss.append(validation_loss.detach().cpu())
-            if train_early_stopper.early_stop(validation_loss):             
+            if train_early_stopper.early_stop(validation_loss) or epoch > 300:             
                 break
             epoch += 1
         train_loader = DataLoader(update_train_dataset, batch_size=batch_size, num_workers=4, shuffle=True)
@@ -102,7 +102,7 @@ def train_z2n(config, train_dataset_processed, test_dataset_processed, seed):
                 WINDOW_SIZE=WINDOW_SIZE, COARSE=COARSE, device=device)
         test_violation.append(test_constr_violation)
         print(f"Iteration {iteration} finish, tesing data constraint loss {test_constr_violation}")
-        if test_early_stopper.early_stop(test_constr_violation):             
+        if test_early_stopper.early_stop(test_constr_violation) or iteration > 100:             
                 break
         train_loader = DataLoader((update_train_dataset), \
                                 batch_size=batch_size, num_workers=4, shuffle=True)

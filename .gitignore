@@ -4,7 +4,7 @@
 *.whl
 build
 *.egg-info
-z2n/
+my_proj/
 
 # Dataset
 *.npz
