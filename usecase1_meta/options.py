@@ -51,7 +51,11 @@ class Options(object):
         self.parser.add_argument('--emd_weight', type=float, default=0.01,
                                  help='Weight of EMD loss')   
         self.parser.add_argument('--batch_size', type=int, default=16,
-                                 help='Batch size')               
+                                 help='Batch size')  
+        self.parser.add_argument('--n_epochs', type=int, default=300,
+                                 help='Maximum number of training epochs') 
+        self.parser.add_argument('--n_iters', type=int, default=100,
+                                 help='Maximum number of Lagrangian Iterations')               
         # Lagrangian parameter
         self.parser.add_argument('--mu_lagrange', type=float, default=0.00001,
                                  help='mu parameter in lagrangian algorithm')
